@@ -213,6 +213,21 @@
                 setPreviewMoment(null);
             };
 
+            const submitFeedback = async (momentId, feedbackType) => {
+                if (!serverConnected) return;
+                
+                try {
+                    await fetch(`${API_URL}/api/clips/${momentId}/feedback`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ type: feedbackType })
+                    });
+                    addLog(`✅ Feedback submitted: ${feedbackType}`, 'success');
+                } catch (error) {
+                    addLog(`❌ Feedback error: ${error.message}`, 'error');
+                }
+            };
+
             const getCategoryIcon = (category) => {
                 const icons = { funny: Laugh, hype: Flame, fail: AlertCircle, win: Trophy, clutch: Zap };
                 return icons[category] || Zap;
@@ -287,6 +302,28 @@
                                             className="px-6 bg-slate-600 hover:bg-slate-500 rounded py-3 font-semibold">
                                             Close
                                         </button>
+                                    </div>
+                                    
+                                    <div className="mt-4 border-t border-slate-600 pt-4">
+                                        <div className="text-sm text-slate-400 mb-3">Rate this clip:</div>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            <button onClick={() => { submitFeedback(previewMoment.id, 'banger'); closePreview(); }}
+                                                className="bg-green-600 hover:bg-green-700 rounded py-2 text-sm font-semibold">
+                                                🔥 Banger
+                                            </button>
+                                            <button onClick={() => { submitFeedback(previewMoment.id, 'good'); closePreview(); }}
+                                                className="bg-blue-600 hover:bg-blue-700 rounded py-2 text-sm font-semibold">
+                                                👍 Good
+                                            </button>
+                                            <button onClick={() => { submitFeedback(previewMoment.id, 'mid'); closePreview(); }}
+                                                className="bg-yellow-600 hover:bg-yellow-700 rounded py-2 text-sm font-semibold">
+                                                😐 Mid
+                                            </button>
+                                            <button onClick={() => { submitFeedback(previewMoment.id, 'boring'); closePreview(); }}
+                                                className="bg-red-600 hover:bg-red-700 rounded py-2 text-sm font-semibold">
+                                                👎 Skip
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
