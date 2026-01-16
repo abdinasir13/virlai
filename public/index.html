@@ -46,6 +46,9 @@
             const [showConfig, setShowConfig] = useState(false);
             const [serverConnected, setServerConnected] = useState(false);
             const [previewMoment, setPreviewMoment] = useState(null);
+            const [editCommand, setEditCommand] = useState('');
+            const [editSuggestions, setEditSuggestions] = useState([]);
+            const [isEditing, setIsEditing] = useState(false);
             const [stats, setStats] = useState({
                 totalClips: 0,
                 avgViralityScore: 0,
@@ -228,6 +231,61 @@
                 }
             };
 
+            const editClip = async (momentId, command) => {
+                if (!serverConnected || !command.trim()) return;
+                
+                setIsEditing(true);
+                addLog(`🎬 Editing clip with: "${command}"`, 'info');
+                
+                try {
+                    const response = await fetch(`${API_URL}/api/clips/${momentId}/edit`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        addLog(`✅ Edit complete! Operations: ${data.operations.join(', ')}`, 'success');
+                        
+                        // Update preview to show edited clip
+                        const editedMoment = {
+                            ...previewMoment,
+                            id: data.clip_id,
+                            title: `${previewMoment.title} (Edited)`,
+                            edited: true
+                        };
+                        setPreviewMoment(editedMoment);
+                        setEditCommand('');
+                    } else {
+                        addLog(`❌ Edit failed: ${data.error}`, 'error');
+                    }
+                } catch (error) {
+                    addLog(`❌ Edit error: ${error.message}`, 'error');
+                } finally {
+                    setIsEditing(false);
+                }
+            };
+
+            const loadEditSuggestions = async () => {
+                if (!serverConnected) return;
+                
+                try {
+                    const response = await fetch(`${API_URL}/api/editing/suggestions`);
+                    const data = await response.json();
+                    setEditSuggestions(data.quick_actions || []);
+                } catch (error) {
+                    console.error('Failed to load suggestions:', error);
+                }
+            };
+
+            useEffect(() => {
+                if (serverConnected && previewMoment) {
+                    loadEditSuggestions();
+                }
+            }, [serverConnected, previewMoment]);
+
             const getCategoryIcon = (category) => {
                 const icons = { funny: Laugh, hype: Flame, fail: AlertCircle, win: Trophy, clutch: Zap };
                 return icons[category] || Zap;
@@ -308,6 +366,40 @@
                                             className="px-6 bg-slate-600 hover:bg-slate-500 rounded py-3 font-semibold">
                                             Close
                                         </button>
+                                    </div>
+                                    
+                                    <div className="mt-4 border-t border-slate-600 pt-4">
+                                        <div className="text-sm text-slate-400 mb-3">✨ Edit with AI (natural language):</div>
+                                        
+                                        <div className="flex gap-2 mb-3">
+                                            <input
+                                                type="text"
+                                                value={editCommand}
+                                                onChange={(e) => setEditCommand(e.target.value)}
+                                                onKeyPress={(e) => e.key === 'Enter' && !isEditing && editClip(previewMoment.id, editCommand)}
+                                                placeholder='Try: "make vertical and add subtitles"'
+                                                className="flex-1 bg-slate-700 border border-slate-600 rounded px-3 py-2 text-sm"
+                                                disabled={isEditing}
+                                            />
+                                            <button 
+                                                onClick={() => editClip(previewMoment.id, editCommand)}
+                                                disabled={isEditing || !editCommand.trim()}
+                                                className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 rounded px-4 py-2 text-sm font-semibold">
+                                                {isEditing ? '⏳ Editing...' : '🎬 Edit'}
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="text-xs text-slate-500 mb-2">Quick commands:</div>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {['make vertical', 'add subtitles', 'trim filler', 'speed up 1.5x', 'add hook'].map((suggestion) => (
+                                                <button
+                                                    key={suggestion}
+                                                    onClick={() => setEditCommand(suggestion)}
+                                                    className="px-2 py-1 bg-slate-700 hover:bg-slate-600 rounded text-xs">
+                                                    {suggestion}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                     
                                     <div className="mt-4 border-t border-slate-600 pt-4">
