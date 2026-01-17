@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 
-
 // Icons
 const Play = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>;
 const Pause = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>;
@@ -68,10 +67,10 @@ export default function App() {
     }, ...prev].slice(0, 100));
   };
 
-useEffect(() => {
-  wsRef.current = io(API_URL);
-      
-      wsRef.current.on('connect', () => {
+  useEffect(() => {
+    wsRef.current = io(API_URL);
+    
+    wsRef.current.on('connect', () => {
         setServerConnected(true);
         addLog('✅ Connected to backend server', 'success');
       });
@@ -96,7 +95,6 @@ useEffect(() => {
         );
         addLog(`📹 Clip ready: ${data.id}`, 'success');
       });
-    }
 
     return () => {
       if (wsRef.current) wsRef.current.disconnect();
