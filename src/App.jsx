@@ -477,3 +477,316 @@ export default function App() {
 
           {showConfig && (
             <div className="mb-4 bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+              <h3 className="text-lg font-bold mb-4">Settings</h3>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm text-slate-400 block mb-2">Virality Threshold</label>
+                  <input type="range" min="50" max="95" value={config.viralityThreshold}
+                    onChange={(e) => setConfig({...config, viralityThreshold: parseInt(e.target.value)})}
+                    className="w-full" />
+                  <div className="text-center text-sm mt-1">{config.viralityThreshold}</div>
+                </div>
+                <div>
+                  <label className="text-sm text-slate-400 block mb-2">Clip Duration (s)</label>
+                  <input type="range" min="15" max="60" step="5" value={config.clipDuration}
+                    onChange={(e) => setConfig({...config, clipDuration: parseInt(e.target.value)})}
+                    className="w-full" />
+                  <div className="text-center text-sm mt-1">{config.clipDuration}s</div>
+                </div>
+                <div>
+                  <label className="text-sm text-slate-400 block mb-2">Buffer Before (s)</label>
+                  <input type="range" min="5" max="20" value={config.bufferBefore}
+                    onChange={(e) => setConfig({...config, bufferBefore: parseInt(e.target.value)})}
+                    className="w-full" />
+                  <div className="text-center text-sm mt-1">{config.bufferBefore}s</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* CLIPS TAB */}
+        {activeTab === 'clips' && (
+          <div className="grid grid-cols-4 gap-6">
+            <div className="col-span-1">
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700 mb-4">
+                <h2 className="text-xl font-bold mb-4">Stream Monitoring</h2>
+                <div className="bg-slate-700/30 rounded-lg p-4 text-center">
+                  <div className="text-3xl font-bold text-purple-400 mb-2">{moments.length}</div>
+                  <div className="text-sm text-slate-400">Clips Detected</div>
+                  <div className="mt-3 text-xs space-y-1">
+                    <div className="text-green-400">Ready: {moments.filter(m => m.status === 'ready').length}</div>
+                    <div className="text-yellow-400">Processing: {moments.filter(m => m.status === 'processing').length}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+                <h2 className="text-xl font-bold mb-4">Activity Log</h2>
+                <div ref={logRef} className="space-y-1 max-h-96 overflow-y-auto text-xs font-mono">
+                  {logs.map(log => (
+                    <div key={log.id} className={`p-2 rounded ${
+                      log.type === 'success' ? 'bg-green-900/20 text-green-300' :
+                      log.type === 'error' ? 'bg-red-900/20 text-red-300' :
+                      'bg-slate-700/20 text-slate-300'
+                    }`}>
+                      <span className="text-slate-500">[{log.timestamp}]</span> {log.message}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="col-span-3">
+              <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Zap />
+                    Detected Moments
+                  </h2>
+                  {selectedClips.length > 0 && (
+                    <span className="text-sm text-purple-400">{selectedClips.length} selected</span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 mb-6">
+                  <div className="col-span-2 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <input
+                      type="text"
+                      placeholder="Search by title or ID..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                  
+                  <div className="relative">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2 pl-10 text-sm focus:outline-none focus:border-purple-500">
+                      <option value="all">All Categories</option>
+                      <option value="funny">Funny</option>
+                      <option value="hype">Hype</option>
+                      <option value="win">Win</option>
+                      <option value="fail">Fail</option>
+                      <option value="clutch">Clutch</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mb-6">
+                  {[
+                    { key: 'recent', label: '⏱️ Recent' },
+                    { key: 'virality', label: '🔥 Virality' },
+                    { key: 'category', label: '📁 Category' }
+                  ].map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => setSortBy(key)}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        sortBy === key
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {filteredAndSortedMoments.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    {searchTerm || filterCategory !== 'all' ? 'No clips match your filters' : 'No clips detected yet'}
+                  </div>
+                ) : (
+                  <div className="space-y-3 max-h-[700px] overflow-y-auto">
+                    {filteredAndSortedMoments.map(moment => {
+                      const CategoryIcon = getCategoryIcon(moment.category);
+                      const isSelected = selectedClips.includes(moment.id);
+                      
+                      return (
+                        <div 
+                          key={moment.id}
+                          onClick={() => toggleClipSelection(moment.id)}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-purple-900/40 border-purple-500'
+                              : 'bg-slate-700/30 border-slate-600 hover:border-purple-500'
+                          }`}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className={`${getCategoryColor(moment.category)} w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                                <CategoryIcon />
+                              </div>
+                              <div>
+                                <div className="font-bold text-sm">{moment.title || 'Viral Moment'}</div>
+                                <div className="text-xs text-slate-400">
+                                  {new Date(moment.timestamp).toLocaleTimeString()}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className={`text-2xl font-bold ${getViralityColor(moment.virality_score || 0)} text-right mr-4`}>
+                              {moment.virality_score || 0}
+                            </div>
+                            
+                            <div className={`text-xs font-bold px-2 py-1 rounded ${
+                              moment.status === 'ready' ? 'bg-green-900/50 text-green-300' : 'bg-yellow-900/50 text-yellow-300'
+                            }`}>
+                              {moment.status === 'ready' ? '✓ Ready' : '⏳'}
+                            </div>
+                          </div>
+
+                          {moment.feedback && (
+                            <div className="text-xs text-purple-400 mt-2">💬 Feedback: {moment.feedback}</div>
+                          )}
+
+                          {moment.status === 'ready' && (
+                            <div className="flex gap-2 mt-3">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  previewClip(moment);
+                                }}
+                                className="flex-1 bg-blue-600 hover:bg-blue-700 rounded py-2 font-semibold flex items-center justify-center gap-2 text-sm">
+                                <Eye />
+                                Preview & Edit
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  downloadClip(moment);
+                                }}
+                                className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded py-2 font-semibold flex items-center justify-center gap-2 text-sm">
+                                <Download />
+                                Download
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* LEARNING STATS TAB */}
+        {activeTab === 'learning' && (
+          <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold flex items-center gap-2">
+                <BarChart />
+                Learning System Dashboard
+              </h2>
+              <button
+                onClick={fetchLearningStats}
+                disabled={learningLoading}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50">
+                {learningLoading ? <Loader /> : <TrendingUp />}
+                {learningLoading ? 'Updating...' : 'Refresh'}
+              </button>
+            </div>
+
+            {learningStats ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/30 border border-blue-500/30 rounded-lg p-6">
+                    <div className="text-blue-400 text-sm mb-2">Total Clips Analyzed</div>
+                    <div className="text-3xl font-bold">{learningStats.total_clips_analyzed || 0}</div>
+                    <div className="text-xs text-slate-400 mt-2">clips processed</div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-green-900/30 to-green-800/30 border border-green-500/30 rounded-lg p-6">
+                    <div className="text-green-400 text-sm mb-2">User Feedback Received</div>
+                    <div className="text-3xl font-bold">{learningStats.feedback_samples || 0}</div>
+                    <div className="text-xs text-slate-400 mt-2">feedback entries</div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-900/30 to-purple-800/30 border border-purple-500/30 rounded-lg p-6">
+                    <div className="text-purple-400 text-sm mb-2">Model Accuracy</div>
+                    <div className="text-3xl font-bold">{Math.round((learningStats.accuracy || 0) * 100)}%</div>
+                    <div className="text-xs text-slate-400 mt-2">prediction accuracy</div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-orange-900/30 to-orange-800/30 border border-orange-500/30 rounded-lg p-6">
+                    <div className="text-orange-400 text-sm mb-2">Avg Virality Score</div>
+                    <div className="text-3xl font-bold">{Math.round((learningStats.avg_virality_score || 0))}</div>
+                    <div className="text-xs text-slate-400 mt-2">across all clips</div>
+                  </div>
+                </div>
+
+                {learningStats.feedback_distribution && (
+                  <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-6">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <MessageSquare /> Feedback Distribution
+                    </h3>
+                    <div className="grid grid-cols-4 gap-4">
+                      {Object.entries(learningStats.feedback_distribution).map(([type, count]) => (
+                        <div key={type} className="text-center">
+                          <div className="text-2xl mb-2">
+                            {type === 'banger' ? '🔥' : type === 'good' ? '👍' : type === 'mid' ? '😐' : '💤'}
+                          </div>
+                          <div className="font-bold text-lg">{count}</div>
+                          <div className="text-sm text-slate-400 capitalize">{type}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {learningStats.category_performance && (
+                  <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-6">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <TrendingUp /> Category Performance
+                    </h3>
+                    <div className="space-y-3">
+                      {Object.entries(learningStats.category_performance).map(([category, stats]) => (
+                        <div key={category}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="capitalize font-semibold">{category}</span>
+                            <span className="text-sm text-slate-400">
+                              {stats.count} clips • {Math.round((stats.accuracy || 0) * 100)}% accuracy
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-600 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-purple-500 to-pink-500 h-full"
+                              style={{ width: `${(stats.accuracy || 0) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {learningStats.insights && (
+                  <div className="bg-slate-700/30 border border-slate-600 rounded-lg p-6">
+                    <h3 className="text-lg font-bold mb-4">💡 Model Insights</h3>
+                    <div className="space-y-2 text-sm">
+                      {learningStats.insights.map((insight, idx) => (
+                        <div key={idx} className="flex gap-2 text-slate-300">
+                          <span className="text-purple-400">→</span>
+                          <span>{insight}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-slate-400">
+                {learningLoading ? 'Loading learning stats...' : 'No learning data available yet'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
