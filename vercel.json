@@ -1,8 +1,20 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
+```
+
+## **Step 5: Create `.env.local` (Don't commit this)**
+```
+REACT_APP_API_URL=http://localhost:5000
+```
+
+Add to `.gitignore`:
+```
+.env.local
+.env
+node_modules/
+build/
