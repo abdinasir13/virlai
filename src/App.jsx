@@ -27,7 +27,6 @@ const Loader = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('clips');
-  const [streams, setStreams] = useState([]);
   const [moments, setMoments] = useState([]);
   const [logs, setLogs] = useState([]);
   const [serverConnected, setServerConnected] = useState(false);
@@ -105,7 +104,7 @@ export default function App() {
     if (activeTab === 'learning' && serverConnected) {
       fetchLearningStats();
     }
-  }, [activeTab, serverConnected]);
+  }, [activeTab, serverConnected, fetchLearningStats]);
 
   const fetchLearningStats = async () => {
     setLearningLoading(true);
